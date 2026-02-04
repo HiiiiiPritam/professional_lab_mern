@@ -21,12 +21,18 @@ async function setup() {
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
 
-    // Execute the schema script
-    console.log('Executing schema.sql...');
-    await connection.query(schemaSql);
+    // Check if the database already has tables
+    const [tables] = await connection.query('SHOW TABLES FROM lumina_finance LIKE "transactions"');
     
-    console.log('Database and tables set up successfully!');
-    console.log('Seed data inserted.');
+    if (tables.length > 0) {
+      console.log('Database already initialized. Skipping schema execution.');
+    } else {
+      // Execute the schema script
+      console.log('Executing schema.sql...');
+      await connection.query(schemaSql);
+      console.log('Database and tables set up successfully!');
+      console.log('Seed data inserted.');
+    }
     
   } catch (err) {
     console.error('Error setting up database:', err);
