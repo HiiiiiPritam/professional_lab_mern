@@ -7,8 +7,6 @@ RUN npm install
 
 COPY . .
 
-RUN chmod +x wait-for-db.sh
-
 EXPOSE 5000
 
-CMD ["sh", "wait-for-db.sh"]
+CMD ["sh", "-c", "node setup.js && node migrate_budgets.js && npm run dev"]

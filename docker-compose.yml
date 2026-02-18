@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     container_name: lumina_mysql
     environment:
-      MYSQL_ROOT_PASSWORD: '@Rajyoga1'
+      MYSQL_ROOT_PASSWORD: '@chandrashu'
       MYSQL_DATABASE: lumina_finance
     ports:
       - "3307:3306"
@@ -22,7 +22,7 @@ services:
     environment:
       DB_HOST: mysql
       DB_USER: root
-      DB_PASSWORD: '@Rajyoga1'
+      DB_PASSWORD: '@chandrashu'
       DB_NAME: lumina_finance
       PORT: 5000
     depends_on:
