@@ -29,7 +29,7 @@ const TransactionsList = ({ transactions, onDelete }) => {
                   {new Date(t.date).toLocaleDateString()}
                 </td>
                 <td className={`py-3 text-right font-medium ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {t.type === 'income' ? '+' : '-'}${Number(t.amount).toFixed(2)}
+                  {t.type === 'income' ? '+' : '-'}{new Intl.NumberFormat('en-US', { style: 'currency', currency: t.displayCurrency || 'USD' }).format(Number(t.amount))}
                 </td>
                 <td className="py-3 text-center">
                   <button 

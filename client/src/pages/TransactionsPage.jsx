@@ -1,17 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import TransactionsList from '../components/TransactionsList';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Loader2 } from 'lucide-react';
+import { currencyChange } from '../helpers/currencyChange';
 
 const TransactionsPage = ({ transactions, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  const [targetCurrency, setTargetCurrency] = useState('USD');
+  const [displayTransactions, setDisplayTransactions] = useState([]);
+  const [isConverting, setIsConverting] = useState(false);
 
-  const filteredTransactions = transactions.filter(t => {
-    const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          t.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' ? true : t.type === filterType;
-    return matchesSearch && matchesType;
-  });
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            t.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesType = filterType === 'all' ? true : t.type === filterType;
+      return matchesSearch && matchesType;
+    });
+  }, [transactions, searchTerm, filterType]);
+
+  useEffect(() => {
+    const convertAmounts = async () => {
+      setIsConverting(true);
+      if (targetCurrency === 'USD') {
+        setDisplayTransactions(filteredTransactions.map(t => ({ ...t, displayCurrency: 'USD' })));
+        setIsConverting(false);
+        return;
+      }
+      try {
+        const converted = await Promise.all(
+          filteredTransactions.map(async (t) => {
+            const newAmount = await currencyChange(t.amount, 'USD', targetCurrency);
+            return { ...t, amount: newAmount, displayCurrency: targetCurrency };
+          })
+        );
+        setDisplayTransactions(converted);
+      } catch (error) {
+        console.error("Failed to convert currency", error);
+        setDisplayTransactions(filteredTransactions.map(t => ({ ...t, displayCurrency: 'USD' })));
+      }
+      setIsConverting(false);
+    };
+
+    convertAmounts();
+  }, [filteredTransactions, targetCurrency]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -38,6 +70,20 @@ const TransactionsPage = ({ transactions, onDelete }) => {
         </div>
         
         <div className="flex items-center gap-2 w-full md:w-auto">
+          <select 
+            className="bg-[#09090b] border-transparent focus:border-violet-500/50 cursor-pointer min-w-[80px]"
+            value={targetCurrency}
+            onChange={(e) => setTargetCurrency(e.target.value)}
+          >
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="INR">INR</option>
+            <option value="JPY">JPY</option>
+            <option value="CAD">CAD</option>
+            <option value="AUD">AUD</option>
+          </select>
+
           <Filter size={18} className="text-muted" />
           <select 
             className="bg-[#09090b] border-transparent focus:border-violet-500/50 cursor-pointer min-w-[150px]"
@@ -51,8 +97,13 @@ const TransactionsPage = ({ transactions, onDelete }) => {
         </div>
       </div>
 
-      <div className="border border-[#27272a] rounded-xl overflow-hidden shadow-sm bg-[#141417]">
-        <TransactionsList transactions={filteredTransactions} onDelete={onDelete} />
+      <div className="border border-[#27272a] rounded-xl overflow-hidden shadow-sm bg-[#141417] relative">
+        {isConverting && (
+          <div className="absolute inset-0 bg-[#141417]/50 backdrop-blur-sm z-10 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+          </div>
+        )}
+        <TransactionsList transactions={displayTransactions} onDelete={onDelete} />
       </div>
     </div>
   );
